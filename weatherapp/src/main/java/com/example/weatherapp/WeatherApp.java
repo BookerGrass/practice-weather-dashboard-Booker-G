@@ -4,6 +4,10 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.Scanner;
 import org.json.JSONObject;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+
+
 
 public class WeatherApp {
 
@@ -50,14 +54,17 @@ public class WeatherApp {
         }
     }
 
+
+
     private static void getWeather(String city) {
         try {
-            String url = BASE_URL + "?q=" + city
+            // Encode the city to handle spaces and special characters
+            String encodedCity = URLEncoder.encode(city, StandardCharsets.UTF_8);
+            String url = BASE_URL + "?q=" + encodedCity
                     + "&appid=" + API_KEY
                     + "&units=imperial";
 
             HttpClient client = HttpClient.newHttpClient();
-
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(url))
                     .GET()
@@ -67,22 +74,17 @@ public class WeatherApp {
                     client.send(request, HttpResponse.BodyHandlers.ofString());
 
             if (response.statusCode() != 200) {
-                System.out.println("Error fetching weather data.");
+                System.out.println("Error fetching weather data: " + response.body());
                 return;
             }
 
             JSONObject json = new JSONObject(response.body());
 
-            double temperature =
-                    json.getJSONObject("main").getDouble("temp");
-
-            int humidity =
-                    json.getJSONObject("main").getInt("humidity");
-
-            String description =
-                    json.getJSONArray("weather")
-                            .getJSONObject(0)
-                            .getString("description");
+            double temperature = json.getJSONObject("main").getDouble("temp");
+            int humidity = json.getJSONObject("main").getInt("humidity");
+            String description = json.getJSONArray("weather")
+                    .getJSONObject(0)
+                    .getString("description");
 
             displayDashboard(city, temperature, description, humidity);
 
@@ -90,6 +92,7 @@ public class WeatherApp {
             System.out.println("Failed to fetch weather: " + e.getMessage());
         }
     }
+
 
     private static void displayDashboard(String city,
                                          double temp,
